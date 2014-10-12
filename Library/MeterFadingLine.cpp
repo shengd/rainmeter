@@ -29,6 +29,7 @@ using namespace Gdiplus;
 **
 */
 MeterFadingLine::MeterFadingLine(Skin* skin, const WCHAR* name) : Meter(skin, name),
+	m_Autoscale(false),
 	m_LineWidth(1.0),
 	m_CurrentPos(),
 	m_GraphStartLeft(false)
@@ -137,6 +138,7 @@ void MeterFadingLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	}
 
 	//Read in options
+	m_Autoscale = parser.ReadBool(section, L"AutoScale", false);
 	m_LineWidth = parser.ReadFloat(section, L"LineWidth", 1.0);
 
 	//More options
@@ -210,15 +212,47 @@ bool MeterFadingLine::Draw(Gfx::Canvas& canvas)
 	int counter = 0;
 
 	// Find the maximum value
-	for (auto i = m_Measures.cbegin(); i != m_Measures.cend(); ++i)
+	if (m_Autoscale)
 	{
-		double val = (*i)->GetMaxValue();
-		maxValue = max(maxValue, val);
-	}
+		double newValue = 0;
+		counter = 0;
+		for (auto i = m_AllValues.cbegin(); i != m_AllValues.cend(); ++i)
+		{
+			double scale = m_ScaleValues[counter];
+			for (auto j = (*i).cbegin(); j != (*i).cend(); ++j)
+			{
+				double val = (*j) * scale;
+				newValue = max(newValue, val);
+			}
+			++counter;
+		}
 
-	if (maxValue == 0.0)
+		// Scale the value up to nearest power of 2
+		if (newValue > DBL_MAX / 2.0)
+		{
+			maxValue = DBL_MAX;
+		}
+		else
+		{
+			maxValue = 2.0;
+			while (maxValue < newValue)
+			{
+				maxValue *= 2.0;
+			}
+		}
+	}
+	else
 	{
-		maxValue = 1.0;
+		for (auto i = m_Measures.cbegin(); i != m_Measures.cend(); ++i)
+		{
+			double val = (*i)->GetMaxValue();
+			maxValue = max(maxValue, val);
+		}
+
+		if (maxValue == 0.0)
+		{
+			maxValue = 1.0;
+		}
 	}
 
 	Gdiplus::Rect meterRect = GetMeterRectPadding();
