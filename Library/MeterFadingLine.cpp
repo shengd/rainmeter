@@ -29,14 +29,9 @@ using namespace Gdiplus;
 **
 */
 MeterFadingLine::MeterFadingLine(Skin* skin, const WCHAR* name) : Meter(skin, name),
-	m_Autoscale(false),
-	m_HorizontalLines(false),
-	m_Flip(false),
 	m_LineWidth(1.0),
-	m_HorizontalColor(Color::Black),
 	m_CurrentPos(),
-	m_GraphStartLeft(false),
-	m_GraphHorizontalOrientation(false)
+	m_GraphStartLeft(false)
 {
 }
 
@@ -54,18 +49,18 @@ MeterFadingLine::~MeterFadingLine()
 */
 void MeterFadingLine::Initialize()
 {
-	Meter::Initialize();
+	Meter::Initialize();												//flag this class as initialized
 
-	size_t colorsSize = m_Colors.size();
-	size_t allValuesSize = m_AllValues.size();
-	size_t num = (allValuesSize > 0) ? m_AllValues[0].size() : 0;
-	int maxSize = m_GraphHorizontalOrientation ? m_H : m_W;
+	size_t colorsSize = m_Colors.size();								//get the number of colors
+	size_t allValuesSize = m_AllValues.size();							//get the number of series
+	size_t num = (allValuesSize > 0) ? m_AllValues[0].size() : 0;		//if there is at least one series, get the length of the first series
+	int maxSize = m_W;													//get the primary axis length
 
 	if (colorsSize != allValuesSize)
 	{
-		if (colorsSize > allValuesSize)
+		if (colorsSize > allValuesSize)									//if there are more colors than series
 		{
-			for (size_t i = allValuesSize; i < colorsSize; ++i)
+			for (size_t i = allValuesSize; i < colorsSize; ++i)			//add empty series until there are as many series as colors
 			{
 				m_AllValues.push_back(std::vector<double>());
 
@@ -75,13 +70,13 @@ void MeterFadingLine::Initialize()
 				}
 			}
 		}
-		else
+		else															//if there are more series than colors
 		{
 			m_AllValues.resize(colorsSize);
 		}
 	}
 
-	if (maxSize < 0 || num != (size_t)maxSize)
+	if (maxSize < 0 || num != (size_t)maxSize)							//resize all data series to match meter width
 	{
 		if (m_CurrentPos >= maxSize) m_CurrentPos = 0;
 
@@ -104,11 +99,11 @@ void MeterFadingLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 {
 	WCHAR tmpName[64];
 
-	// Store the current number of lines so we know if the buffer needs to be updated
+	//Store the current number of lines so we know if the buffer needs to be updated
 	int oldLineCount = (int)m_Colors.size();
-	int oldSize = m_GraphHorizontalOrientation ? m_H : m_W;
-	bool oldGraphHorizontalOrientation = m_GraphHorizontalOrientation;
+	int oldSize = m_W;
 
+	//Read options
 	Meter::ReadOptions(parser, section);
 
 	int lineCount = parser.ReadInt(section, L"LineCount", 1);
@@ -116,7 +111,7 @@ void MeterFadingLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	m_Colors.clear();
 	m_ScaleValues.clear();
 
-	for (int i = 0; i < lineCount; ++i)
+	for (int i = 0; i < lineCount; ++i)			//read colors and scales one by one for each series
 	{
 		if (i == 0)
 		{
@@ -141,13 +136,10 @@ void MeterFadingLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 		m_ScaleValues.push_back(parser.ReadFloat(section, tmpName, 1.0));
 	}
 
-	m_Flip = parser.ReadBool(section, L"Flip", false);
-	m_Autoscale = parser.ReadBool(section, L"AutoScale", false);
+	//Read in options
 	m_LineWidth = parser.ReadFloat(section, L"LineWidth", 1.0);
-	m_HorizontalLines = parser.ReadBool(section, L"HorizontalLines", false);
-	ARGB color = parser.ReadColor(section, L"HorizontalColor", Color::Black);		// This is left here for backwards compatibility
-	m_HorizontalColor = parser.ReadColor(section, L"HorizontalLineColor", color);	// This is what it should be
 
+	//More options
 	const WCHAR* graph = parser.ReadString(section, L"GraphStart", L"RIGHT").c_str();
 	if (_wcsicmp(graph, L"RIGHT") == 0)
 	{
@@ -162,24 +154,11 @@ void MeterFadingLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 		LogErrorF(this, L"GraphStart=%s is not valid", graph);
 	}
 
-	graph = parser.ReadString(section, L"GraphOrientation", L"VERTICAL").c_str();
-	if (_wcsicmp(graph, L"VERTICAL") == 0)
-	{
-		m_GraphHorizontalOrientation = false;
-	}
-	else if (_wcsicmp(graph, L"HORIZONTAL") ==  0)
-	{
-		m_GraphHorizontalOrientation = true;
-	}
-	else
-	{
-		LogErrorF(this, L"GraphOrientation=%s is not valid", graph);
-	}
-
+	//If this is just a refresh, update our size and reinitialize if needed
 	if (m_Initialized)
 	{
-		int maxSize = m_GraphHorizontalOrientation ? m_H : m_W;
-		if (oldLineCount != lineCount || oldSize != maxSize || oldGraphHorizontalOrientation != m_GraphHorizontalOrientation)
+		int maxSize = m_W;
+		if (oldLineCount != lineCount || oldSize != maxSize)
 		{
 			m_AllValues.clear();
 			m_CurrentPos = 0;
@@ -190,13 +169,14 @@ void MeterFadingLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 /*
 ** Updates the value(s) from the measures.
+** Returns true if the meter was updated
 **
 */
 bool MeterFadingLine::Update()
 {
 	if (Meter::Update() && !m_Measures.empty())
 	{
-		int maxSize = m_GraphHorizontalOrientation ? m_H : m_W;
+		int maxSize = m_W;
 
 		if (maxSize > 0)
 		{
@@ -221,7 +201,7 @@ bool MeterFadingLine::Update()
 */
 bool MeterFadingLine::Draw(Gfx::Canvas& canvas)
 {
-	int maxSize = m_GraphHorizontalOrientation ? m_H : m_W;
+	int maxSize = m_W;
 	if (!Meter::Draw(canvas) || maxSize <= 0) return false;
 	
 	Gdiplus::Graphics& graphics = canvas.BeginGdiplusContext();
@@ -230,205 +210,79 @@ bool MeterFadingLine::Draw(Gfx::Canvas& canvas)
 	int counter = 0;
 
 	// Find the maximum value
-	if (m_Autoscale)
+	for (auto i = m_Measures.cbegin(); i != m_Measures.cend(); ++i)
 	{
-		double newValue = 0;
-		counter = 0;
-		for (auto i = m_AllValues.cbegin(); i != m_AllValues.cend(); ++i)
-		{
-			double scale = m_ScaleValues[counter];
-			for (auto j = (*i).cbegin(); j != (*i).cend(); ++j)
-			{
-				double val = (*j) * scale;
-				newValue = max(newValue, val);
-			}
-			++counter;
-		}
-
-		// Scale the value up to nearest power of 2
-		if (newValue > DBL_MAX / 2.0)
-		{
-			maxValue = DBL_MAX;
-		}
-		else
-		{
-			maxValue = 2.0;
-			while (maxValue < newValue)
-			{
-				maxValue *= 2.0;
-			}
-		}
+		double val = (*i)->GetMaxValue();
+		maxValue = max(maxValue, val);
 	}
-	else
-	{
-		for (auto i = m_Measures.cbegin(); i != m_Measures.cend(); ++i)
-		{
-			double val = (*i)->GetMaxValue();
-			maxValue = max(maxValue, val);
-		}
 
-		if (maxValue == 0.0)
-		{
-			maxValue = 1.0;
-		}
+	if (maxValue == 0.0)
+	{
+		maxValue = 1.0;
 	}
 
 	Gdiplus::Rect meterRect = GetMeterRectPadding();
 
-	// Draw the horizontal lines
-	if (m_HorizontalLines)
-	{
-		// Calc the max number of lines we should draw
-		int maxLines = meterRect.Height / 4;	// one line per 4 pixels is max
-		int numOfLines;
-
-		// Check the highest power of 2 that fits in maxLines
-		int power = 2;
-		while (power < maxLines)
-		{
-			power *= 2;
-		}
-
-		numOfLines = ((int)maxValue % power) + 1;
-
-		Pen pen(m_HorizontalColor);
-
-		REAL Y;
-		for (int j = 0; j < numOfLines; ++j)
-		{
-			Y = (REAL)((j + 1) * meterRect.Height / (numOfLines + 1));
-			Y = meterRect.Y + meterRect.Height - Y - 1;
-			graphics.DrawLine(&pen, (REAL)meterRect.X, Y, (REAL)(meterRect.X + meterRect.Width - 1), Y);	// GDI+
-		}
-	}
-
 	// Draw all the lines
-
-	if (m_GraphHorizontalOrientation)
+	const REAL H = meterRect.Height - 1.0f;
+	counter = 0;
+	for (auto i = m_AllValues.cbegin(); i != m_AllValues.cend(); ++i)
 	{
-		const REAL W = meterRect.Width - 1.0f;
-		counter = 0;
-		for (auto i = m_AllValues.cbegin(); i != m_AllValues.cend(); ++i)
+		// Draw a line
+		REAL Y, oldY;
+
+		const double scale = m_ScaleValues[counter] * H / maxValue;
+
+		int pos = m_CurrentPos;
+
+		auto calcY = [&](REAL& _y)
 		{
-			// Draw a line
-			REAL X, oldX;
+			_y = (REAL)((*i)[pos] * scale);
+			_y = min(_y, H);
+			_y = max(_y, 0.0f);
+			_y = meterRect.Y + (H - _y);
+		};
 
-			const double scale = m_ScaleValues[counter] * W / maxValue;
+		calcY(oldY);
 
-			int pos = m_CurrentPos;
-
-			auto calcX = [&](REAL& _x)
-			{
-				_x = (REAL)((*i)[pos] * scale);
-				_x = min(_x, W);
-				_x = max(_x, 0.0f);
-				_x = meterRect.X + (m_GraphStartLeft ? _x : W - _x);
-			};
-
-			calcX(oldX);
-
-			// Cache all lines
-			GraphicsPath path;
+		// Cache all lines
+		GraphicsPath path;
 		
-			if (!m_Flip)
-			{
-				for (int j = meterRect.Y + 1, R = meterRect.Y + meterRect.Height; j < R; ++j)
-				{
-					++pos;
-					pos %= meterRect.Height;
-
-					calcX(X);
-
-					path.AddLine(oldX, (REAL)(j - 1), X, (REAL)j);
-
-					oldX = X;
-				}
-			}
-			else
-			{
-				for (int j = meterRect.Y + meterRect.Height, R = meterRect.Y + 1; j > R; --j)
-				{
-					++pos;
-					pos %= meterRect.Height;
-
-					calcX(X);
-
-					path.AddLine(oldX, (REAL)(j - 1), X, (REAL)(j - 2));
-
-					oldX = X;
-				}
-			}
-
-			// Draw cached lines
-			Pen pen(m_Colors[counter], (REAL)m_LineWidth);
-			pen.SetLineJoin(LineJoinBevel);
-			graphics.DrawPath(&pen, &path);
-
-			++counter;
-		}
-	}
-	else
-	{
-		const REAL H = meterRect.Height - 1.0f;
-		counter = 0;
-		for (auto i = m_AllValues.cbegin(); i != m_AllValues.cend(); ++i)
+		if (!m_GraphStartLeft)
 		{
-			// Draw a line
-			REAL Y, oldY;
-
-			const double scale = m_ScaleValues[counter] * H / maxValue;
-
-			int pos = m_CurrentPos;
-
-			auto calcY = [&](REAL& _y)
+			for (int j = meterRect.X + 1, R = meterRect.X + meterRect.Width; j < R; ++j)
 			{
-				_y = (REAL)((*i)[pos] * scale);
-				_y = min(_y, H);
-				_y = max(_y, 0.0f);
-				_y = meterRect.Y + (m_Flip ? _y : H - _y);
-			};
+				++pos;
+				pos %= meterRect.Width;
 
-			calcY(oldY);
+				calcY(Y);
 
-			// Cache all lines
-			GraphicsPath path;
-		
-			if (!m_GraphStartLeft)
-			{
-				for (int j = meterRect.X + 1, R = meterRect.X + meterRect.Width; j < R; ++j)
-				{
-					++pos;
-					pos %= meterRect.Width;
+				path.AddLine((REAL)(j - 1), oldY, (REAL)j, Y);
 
-					calcY(Y);
-
-					path.AddLine((REAL)(j - 1), oldY, (REAL)j, Y);
-
-					oldY = Y;
-				}
+				oldY = Y;
 			}
-			else
-			{
-				for (int j = meterRect.X + meterRect.Width, R = meterRect.X + 1; j > R; --j)
-				{
-					++pos;
-					pos %= meterRect.Width;
-
-					calcY(Y);
-
-					path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
-
-					oldY = Y;
-				}
-			}
-
-			// Draw cached lines
-			Pen pen(m_Colors[counter], (REAL)m_LineWidth);
-			pen.SetLineJoin(LineJoinBevel);
-			graphics.DrawPath(&pen, &path);
-
-			++counter;
 		}
+		else
+		{
+			for (int j = meterRect.X + meterRect.Width, R = meterRect.X + 1; j > R; --j)
+			{
+				++pos;
+				pos %= meterRect.Width;
+
+				calcY(Y);
+
+				path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
+
+				oldY = Y;
+			}
+		}
+
+		// Draw cached lines
+		Pen pen(m_Colors[counter], (REAL)m_LineWidth);
+		pen.SetLineJoin(LineJoinBevel);
+		graphics.DrawPath(&pen, &path);
+
+		++counter;
 	}
 
 	canvas.EndGdiplusContext();

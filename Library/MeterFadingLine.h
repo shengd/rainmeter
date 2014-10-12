@@ -27,16 +27,12 @@ private:
 	std::vector<double> m_ScaleValues;
 
 	bool m_Autoscale;
-	bool m_HorizontalLines;
-	bool m_Flip;
 	double m_LineWidth;
-	Gdiplus::Color m_HorizontalColor;
 
 	std::vector< std::vector<double> > m_AllValues;
 	int m_CurrentPos;
 
 	bool m_GraphStartLeft;
-	bool m_GraphHorizontalOrientation;
 };
 
 #endif
