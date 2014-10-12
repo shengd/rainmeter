@@ -25,6 +25,7 @@
 #include "MeterString.h"
 #include "MeterImage.h"
 #include "MeterLine.h"
+#include "MeterFadingLine.h"
 #include "MeterRoundLine.h"
 #include "MeterRotator.h"
 #include "MeterButton.h"
@@ -423,6 +424,10 @@ Meter* Meter::Create(const WCHAR* meter, Skin* skin, const WCHAR* name)
 	else if (_wcsicmp(L"LINE", meter) == 0)
 	{
 		return new MeterLine(skin, name);
+	}
+	else if (_wcsicmp(L"FADINGLINE", meter) == 0)
+	{
+		return new MeterFadingLine(skin, name);
 	}
 	else if (_wcsicmp(L"ROUNDLINE", meter) == 0)
 	{
