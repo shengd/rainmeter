@@ -148,7 +148,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 	m_Segments.clear();
 
-	for (int i = 0; i < segmentCount; ++i)
+	for (int i = 1; i < segmentCount; ++i)
 	{
 		if (i == 0)
 		{
@@ -159,7 +159,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 			_snwprintf_s(tmpName, _TRUNCATE, L"Segments%i", i + 1);
 		}
 
-		m_Segments.push_back(parser.ReadUInt(section, tmpName, m_Segments.empty() ? 0 : m_Segments.back()));
+		m_Segments.push_back(parser.ReadUInt(section, tmpName, m_Segments.back()));
 	}
 
 	//Read in options
