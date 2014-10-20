@@ -306,6 +306,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 
 		// Cache all lines
 		GraphicsPath path;
+		int segmentInd = 0;
 		
 		if (!m_GraphStartLeft)
 		{
@@ -313,6 +314,12 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 			{
 				++pos;
 				pos %= meterRect.Width;
+
+				if (segmentInd < m_Segments.size() && j >= meterRect.X + m_Segments[segmentInd])
+				{
+					segmentInd++;
+					path.SetMarker();
+				}
 
 				calcY(Y);
 
@@ -327,6 +334,12 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 			{
 				++pos;
 				pos %= meterRect.Width;
+
+				if (segmentInd < m_Segments.size() && j - 1 <= meterRect.X + meterRect.Width - m_Segments[segmentInd])
+				{
+					segmentInd++;
+					path.SetMarker();
+				}
 
 				calcY(Y);
 
