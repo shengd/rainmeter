@@ -79,6 +79,7 @@ public:
 	uint64_t ReadUInt64(LPCTSTR section, LPCTSTR key, uint64_t defValue);
 	double ReadFloat(LPCTSTR section, LPCTSTR key, double defValue);
 	Gdiplus::ARGB ReadColor(LPCTSTR section, LPCTSTR key, Gdiplus::ARGB defValue);
+	std::vector<Gdiplus::Color> ReadMultipleColors(LPCTSTR section, LPCTSTR key, std::vector<Gdiplus::Color> defValue, std::vector<Gdiplus::Color>* cont);
 	Gdiplus::Rect ReadRect(LPCTSTR section, LPCTSTR key, const Gdiplus::Rect& defValue);
 	RECT ReadRECT(LPCTSTR section, LPCTSTR key, const RECT& defValue);
 	std::vector<Gdiplus::REAL> ReadFloats(LPCTSTR section, LPCTSTR key);
@@ -96,6 +97,7 @@ public:
 	static uint32_t ParseUInt(LPCTSTR string, uint32_t defValue);
 	static uint64_t ParseUInt64(LPCTSTR string, uint64_t defValue);
 	static Gdiplus::ARGB ParseColor(LPCTSTR string);
+	static std::vector<Gdiplus::Color> ParseMultipleColors(LPCTSTR string, std::vector<Gdiplus::Color>* cont);
 	static Gdiplus::Rect ParseRect(LPCTSTR string);
 	static RECT ParseRECT(LPCTSTR string);
 

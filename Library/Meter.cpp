@@ -25,7 +25,7 @@
 #include "MeterString.h"
 #include "MeterImage.h"
 #include "MeterLine.h"
-#include "MeterFadingLine.h"
+#include "MeterSegmentedLine.h"
 #include "MeterRoundLine.h"
 #include "MeterRotator.h"
 #include "MeterButton.h"
@@ -425,9 +425,9 @@ Meter* Meter::Create(const WCHAR* meter, Skin* skin, const WCHAR* name)
 	{
 		return new MeterLine(skin, name);
 	}
-	else if (_wcsicmp(L"FADINGLINE", meter) == 0)
+	else if (_wcsicmp(L"SEGMENTEDLINE", meter) == 0)
 	{
-		return new MeterFadingLine(skin, name);
+		return new MeterSegmentedLine(skin, name);
 	}
 	else if (_wcsicmp(L"ROUNDLINE", meter) == 0)
 	{

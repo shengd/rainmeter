@@ -1015,6 +1015,13 @@ ARGB ConfigParser::ReadColor(LPCTSTR section, LPCTSTR key, ARGB defValue)
 	return (m_LastDefaultUsed) ? defValue : ParseColor(result.c_str());
 }
 
+std::vector<Color> ConfigParser::ReadMultipleColors(LPCTSTR section, LPCTSTR key, std::vector<Color> defValue, std::vector<Color>* cont)
+{
+	const std::wstring& result = ReadString(section, key, L"");
+
+	return (m_LastDefaultUsed) ? defValue : ParseMultipleColors(result.c_str(), cont);
+}
+
 Rect ConfigParser::ReadRect(LPCTSTR section, LPCTSTR key, const Rect& defValue)
 {
 	const std::wstring& result = ReadString(section, key, L"");
@@ -1280,6 +1287,43 @@ ARGB ConfigParser::ParseColor(LPCTSTR string)
 	}
 
 	return Color::MakeARGB(A, R, G, B);
+}
+
+/*
+** Helper method that parses the multiple colors from the given string.
+** Unlike the singular version of this method, this method only accepts
+** hex-values.
+**
+*/
+std::vector<Color> ConfigParser::ParseMultipleColors(LPCTSTR string, std::vector<Color>* cont)
+{
+	int R = 255, G = 255, B = 255, A = 255;
+
+	WCHAR* parseSz = _wcsdup(string);
+	WCHAR* token = wcstok(parseSz, L",");
+	while (token)
+	{
+		if (wcsncmp(token, L"0x", 2) == 0)
+		{
+			token += 2;  // skip prefix
+		}
+
+		size_t len = wcslen(token);
+		if (len >= 8 && !iswspace(token[6]))
+		{
+			swscanf(token, L"%02x%02x%02x%02x", &R, &G, &B, &A);
+		}
+		else if (len >= 6)
+		{
+			swscanf(token, L"%02x%02x%02x", &R, &G, &B);
+		}
+
+		cont->push_back(Color::MakeARGB(A, R, G, B));
+
+		token = wcstok(nullptr, L",");
+	}
+
+	return *cont;
 }
 
 /*
