@@ -110,7 +110,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	int oldLineCount = (int)m_Colors.size();
 	int oldSize = m_W;
 
-	//Read options
+	//Read series options
 	Meter::ReadOptions(parser, section);
 
 	int lineCount = parser.ReadInt(section, L"LineCount", 1);
@@ -118,7 +118,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	m_Colors.clear();
 	m_ScaleValues.clear();
 
-	for (int i = 0; i < lineCount; ++i)			//read colors, scales, and segments one by one for each series
+	for (int i = 0; i < lineCount; ++i)			//read colors, and scales one by one for each series
 	{
 		if (i == 0)
 		{
@@ -133,17 +133,6 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 		if (i == 0)
 		{
-			wcsncpy_s(tmpName, L"Segments", _TRUNCATE);
-		}
-		else
-		{
-			_snwprintf_s(tmpName, _TRUNCATE, L"Segments%i", i + 1);
-		}
-
-		m_Segments.push_back(parser.ReadUInt(section, tmpName, m_Segments.empty() ? 0 : m_Segments.back()));
-
-		if (i == 0)
-		{
 			wcsncpy_s(tmpName, L"Scale", _TRUNCATE);
 		}
 		else
@@ -152,6 +141,25 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 		}
 
 		m_ScaleValues.push_back(parser.ReadFloat(section, tmpName, 1.0));
+	}
+
+	//Read in segment definitions
+	int segmentCount = parser.ReadInt(section, L"SegmentCount", 1);
+
+	m_Segments.clear();
+
+	for (int i = 0; i < segmentCount; ++i)
+	{
+		if (i == 0)
+		{
+			wcsncpy_s(tmpName, L"Segments", _TRUNCATE);
+		}
+		else
+		{
+			_snwprintf_s(tmpName, _TRUNCATE, L"Segments%i", i + 1);
+		}
+
+		m_Segments.push_back(parser.ReadUInt(section, tmpName, m_Segments.empty() ? 0 : m_Segments.back()));
 	}
 
 	//Read in options
