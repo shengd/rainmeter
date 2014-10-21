@@ -152,11 +152,11 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	{
 		if (i == 0)
 		{
-			wcsncpy_s(tmpName, L"Segments", _TRUNCATE);
+			wcsncpy_s(tmpName, L"Segment", _TRUNCATE);
 		}
 		else
 		{
-			_snwprintf_s(tmpName, _TRUNCATE, L"Segments%i", i + 1);
+			_snwprintf_s(tmpName, _TRUNCATE, L"Segment%i", i + 1);
 		}
 
 		m_Segments.push_back(parser.ReadUInt(section, tmpName, m_Segments.back()));
