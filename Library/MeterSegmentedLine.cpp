@@ -359,7 +359,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 			pathIter.NextMarker(&subPath);
 
 			Pen pen(*color, (REAL)m_LineWidth);
-			pen.SetLineJoin(LineJoinBevel);
+			pen.SetLineJoin(LineJoinRound);
 			graphics.DrawPath(&pen, &subPath);
 		}
 
