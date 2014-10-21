@@ -319,9 +319,9 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 
 				if (segmentInd < m_Segments.size() && j >= meterRect.X + m_Segments[segmentInd])
 				{
-					path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
 					segmentInd++;
 					path.SetMarker();
+					path.StartFigure();
 				}
 
 				path.AddLine((REAL)(j - 1), oldY, (REAL)j, Y);
@@ -340,9 +340,9 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 
 				if (segmentInd < m_Segments.size() && j - 1 <= meterRect.X + meterRect.Width - m_Segments[segmentInd])
 				{
-					path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
 					segmentInd++;
 					path.SetMarker();
+					path.StartFigure();
 				}
 
 				path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
