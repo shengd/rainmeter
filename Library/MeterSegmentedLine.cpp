@@ -150,16 +150,16 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 	for (int i = 1; i < segmentCount; ++i)
 	{
-		if (i == 0)
+		if (i == 1)
 		{
 			wcsncpy_s(tmpName, L"Segment", _TRUNCATE);
 		}
 		else
 		{
-			_snwprintf_s(tmpName, _TRUNCATE, L"Segment%i", i + 1);
+			_snwprintf_s(tmpName, _TRUNCATE, L"Segment%i", i);
 		}
 
-		m_Segments.push_back(parser.ReadUInt(section, tmpName, m_Segments.back()));
+		m_Segments.push_back(parser.ReadUInt(section, tmpName, 0));
 	}
 
 	//Read in options
@@ -350,11 +350,17 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		}
 
 		// Draw cached lines
-		for (auto color = m_Colors[counter].cbegin(); color != m_Colors[counter].cend(); ++color)
+		GraphicsPathIterator pathIter(&path);
+		GraphicsPath subPath;
+		int x = 0;
+		for (auto color = m_Colors[counter].rbegin(); color != m_Colors[counter].rend(); ++color)
 		{
+			pathIter.NextMarker(&subPath);
+
 			Pen pen(*color, (REAL)m_LineWidth);
 			pen.SetLineJoin(LineJoinBevel);
-			graphics.DrawPath(&pen, &path);
+			graphics.DrawPath(&pen, &subPath);
+			x = subPath.GetPointCount();
 		}
 
 		++counter;
