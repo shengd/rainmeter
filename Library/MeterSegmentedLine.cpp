@@ -315,13 +315,14 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 				++pos;
 				pos %= meterRect.Width;
 
+				calcY(Y);
+
 				if (segmentInd < m_Segments.size() && j >= meterRect.X + m_Segments[segmentInd])
 				{
+					path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
 					segmentInd++;
 					path.SetMarker();
 				}
-
-				calcY(Y);
 
 				path.AddLine((REAL)(j - 1), oldY, (REAL)j, Y);
 
@@ -335,13 +336,14 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 				++pos;
 				pos %= meterRect.Width;
 
+				calcY(Y);
+
 				if (segmentInd < m_Segments.size() && j - 1 <= meterRect.X + meterRect.Width - m_Segments[segmentInd])
 				{
+					path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
 					segmentInd++;
 					path.SetMarker();
 				}
-
-				calcY(Y);
 
 				path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
 
@@ -352,7 +354,6 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		// Draw cached lines
 		GraphicsPathIterator pathIter(&path);
 		GraphicsPath subPath;
-		int x = 0;
 		for (auto color = m_Colors[counter].rbegin(); color != m_Colors[counter].rend(); ++color)
 		{
 			pathIter.NextMarker(&subPath);
@@ -360,7 +361,6 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 			Pen pen(*color, (REAL)m_LineWidth);
 			pen.SetLineJoin(LineJoinBevel);
 			graphics.DrawPath(&pen, &subPath);
-			x = subPath.GetPointCount();
 		}
 
 		++counter;
