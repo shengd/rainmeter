@@ -162,6 +162,22 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 		m_Segments.push_back(parser.ReadUInt(section, tmpName, 0));
 	}
 
+	m_SegmentDividers.clear();
+
+	for (int i = 0; i < segmentCount; ++i)
+	{
+		if (i == 0)
+		{
+			wcsncpy_s(tmpName, L"SegmentUpdateDivider", _TRUNCATE);
+		}
+		else
+		{
+			_snwprintf_s(tmpName, _TRUNCATE, L"SegmentUpdateDivider%i", i + 1);
+		}
+
+		m_SegmentDividers.push_back(parser.ReadUInt(section, tmpName, 1));
+	}
+
 	//Read in options
 	m_Autoscale = parser.ReadBool(section, L"AutoScale", false);
 	m_LineWidth = parser.ReadFloat(section, L"LineWidth", 1.0);

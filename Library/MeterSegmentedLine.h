@@ -29,6 +29,7 @@ private:
 	std::vector<double> m_ScaleValues;
 
 	std::vector<INT> m_Segments;
+	std::vector<INT> m_SegmentDividers;
 
 	bool m_Autoscale;
 	double m_LineWidth;
