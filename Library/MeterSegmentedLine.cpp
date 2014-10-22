@@ -61,7 +61,7 @@ void MeterSegmentedLine::Initialize()
 	size_t colorsSize = m_Colors.size();								//get the number of colors
 	size_t allValuesSize = m_AllValues.size();							//get the number of series
 	size_t num = (allValuesSize > 0) ? m_AllValues[0].size() : 0;		//if there is at least one series, get the length of the first series
-	int maxSize = m_W;													//get the primary axis length
+	int maxSize = m_DataWidth;											//get the primary axis length
 
 	if (colorsSize != allValuesSize)
 	{
@@ -108,7 +108,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 	//Store the current number of lines so we know if the buffer needs to be updated
 	int oldLineCount = (int)m_Colors.size();
-	int oldSize = m_W;
+	int oldSize = m_DataWidth;
 
 	//Read series options
 	Meter::ReadOptions(parser, section);
@@ -147,6 +147,11 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	int segmentCount = parser.ReadInt(section, L"SegmentCount", 1);
 
 	m_Segments.clear();
+	m_SegmentDividers.clear();
+	m_DataWidth = 0;
+	int lastMarker = 0,
+		currMarker = 0,
+		divider = 1;
 
 	for (int i = 1; i < segmentCount; ++i)
 	{
@@ -159,26 +164,33 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 			_snwprintf_s(tmpName, _TRUNCATE, L"Segment%i", i);
 		}
 
-		m_Segments.push_back(parser.ReadUInt(section, tmpName, 0));
-	}
+		currMarker = parser.ReadUInt(section, tmpName, 0);
+		m_Segments.push_back(currMarker);
 
-	m_SegmentDividers.clear();
-
-	for (int i = 0; i < segmentCount; ++i)
-	{
-		if (i == 0)
+		if (i == 1)
 		{
 			wcsncpy_s(tmpName, L"SegmentUpdateDivider", _TRUNCATE);
 		}
 		else
 		{
-			_snwprintf_s(tmpName, _TRUNCATE, L"SegmentUpdateDivider%i", i + 1);
+			_snwprintf_s(tmpName, _TRUNCATE, L"SegmentUpdateDivider%i", i);
 		}
 
-		m_SegmentDividers.push_back(parser.ReadUInt(section, tmpName, 1));
+		divider = parser.ReadUInt(section, tmpName, 1);
+		m_SegmentDividers.push_back(divider);
+
+		//calculate data buffer width
+		m_DataWidth += divider * (currMarker - lastMarker);
+		lastMarker = currMarker;
 	}
 
-	//Read in options
+	_snwprintf_s(tmpName, _TRUNCATE, L"SegmentUpdateDivider%i", segmentCount);
+	divider = parser.ReadUInt(section, tmpName, 1);
+	m_SegmentDividers.push_back(divider);
+
+	m_DataWidth += divider * (m_W - lastMarker);
+
+	//Read in other options
 	m_Autoscale = parser.ReadBool(section, L"AutoScale", false);
 	m_LineWidth = parser.ReadFloat(section, L"LineWidth", 1.0);
 
@@ -200,7 +212,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	//If this is just a refresh, update our size and reinitialize if needed
 	if (m_Initialized)
 	{
-		int maxSize = m_W;
+		int maxSize = m_DataWidth;
 		if (oldLineCount != lineCount || oldSize != maxSize)
 		{
 			m_AllValues.clear();
@@ -219,7 +231,7 @@ bool MeterSegmentedLine::Update()
 {
 	if (Meter::Update() && !m_Measures.empty())
 	{
-		int maxSize = m_W;
+		int maxSize = m_DataWidth;
 
 		if (maxSize > 0)
 		{
@@ -244,7 +256,7 @@ bool MeterSegmentedLine::Update()
 */
 bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 {
-	int maxSize = m_W;
+	int maxSize = m_DataWidth;
 	if (!Meter::Draw(canvas) || maxSize <= 0) return false;
 	
 	Gdiplus::Graphics& graphics = canvas.BeginGdiplusContext();

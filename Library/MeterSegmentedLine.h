@@ -36,6 +36,7 @@ private:
 
 	std::vector<std::vector<double>> m_AllValues;		//outer vector is series, inner vector is data points
 	int m_CurrentPos;
+	int m_DataWidth;
 
 	bool m_GraphStartLeft;
 };
