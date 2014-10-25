@@ -329,19 +329,19 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 			switch (m_CurveFitMethod)
 			{
 				//first value
-				case 0:	_y = (REAL)((*i)[pos] * scale);
+				case 0:	_y = (REAL)((*i)[pos]);
 						break;
 
 				//arithmetic mean
 				case 1: for (int ind = 0; ind < stepSize; ind++)
-							_y += (REAL)((*i)[(pos + ind) % m_DataWidth] * scale);
+							_y += (REAL)((*i)[(pos + ind) % m_DataWidth]);
 						_y /= stepSize;
 						break;
 
 				default: _y = 0;
 			}
 			
-			
+			_y *= scale;
 			_y = min(_y, H);
 			_y = max(_y, 0.0f);
 			_y = meterRect.Y + (H - _y);
