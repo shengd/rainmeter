@@ -117,6 +117,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 	m_Colors.clear();
 	m_ScaleValues.clear();
+	m_LastPoints.clear();
 
 	for (int i = 0; i < lineCount; ++i)			//read colors, and scales one by one for each series
 	{
@@ -129,7 +130,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 			_snwprintf_s(tmpName, _TRUNCATE, L"LineColor%i", i + 1);
 		}
 
-		m_Colors.push_back(parser.ReadMultipleColors(section, tmpName, defColor, new std::vector<Color>()));
+		m_Colors.push_back(parser.ReadMultipleColors(section, tmpName, defColor, &std::vector<Color>()));
 
 		if (i == 0)
 		{
@@ -141,6 +142,8 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 		}
 
 		m_ScaleValues.push_back(parser.ReadFloat(section, tmpName, 1.0));
+
+		m_LastPoints.push_back(std::vector<REAL>(m_W, 0));
 	}
 
 	//Read in segment definitions

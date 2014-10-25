@@ -35,6 +35,7 @@ private:
 	double m_LineWidth;
 
 	std::vector<std::vector<double>> m_AllValues;		//outer vector is series, inner vector is data points
+	std::vector<std::vector<Gdiplus::REAL>> m_LastPoints;
 	int m_CurrentPos;
 	int m_DataWidth;
 
