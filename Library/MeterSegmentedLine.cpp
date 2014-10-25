@@ -117,7 +117,9 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 	m_Colors.clear();
 	m_ScaleValues.clear();
-	m_LastPoints.clear();
+	for (auto buffer = m_Points.cbegin(); buffer != m_Points.cend(); buffer++)
+		delete[] * buffer;
+	m_Points.clear();
 
 	for (int i = 0; i < lineCount; ++i)			//read colors, and scales one by one for each series
 	{
@@ -143,7 +145,10 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 
 		m_ScaleValues.push_back(parser.ReadFloat(section, tmpName, 1.0));
 
-		m_LastPoints.push_back(std::vector<REAL>(m_W, 0));
+		REAL* pointsBuffer = new REAL[m_W];
+		for (int j = 0; j < m_W; j++)
+			pointsBuffer[j] = 0;
+		m_Points.push_back(pointsBuffer);
 	}
 
 	//Read in segment definitions
@@ -197,6 +202,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	m_Autoscale = parser.ReadBool(section, L"AutoScale", false);
 	m_LineWidth = parser.ReadFloat(section, L"LineWidth", 1.0);
 	m_CurveFitMethod = parser.ReadUInt(section, L"CurveFit", 0);
+	m_SmoothAmount = parser.ReadFloat(section, L"Smooth", 0.0);
 
 	//More options
 	const WCHAR* graph = parser.ReadString(section, L"GraphStart", L"RIGHT").c_str();
@@ -317,6 +323,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 	// Draw all the lines
 	const REAL H = meterRect.Height - 1.0f;
 	counter = 0;
+	auto pointsBuffer = m_Points.cbegin();
 	for (auto i = m_AllValues.cbegin(); i != m_AllValues.cend(); ++i)
 	{
 		// Draw a line
@@ -335,13 +342,18 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 				case 0:	_y = (REAL)((*i)[pos]);
 						break;
 
-				//arithmetic mean
+				//maximum value
 				case 1: for (int ind = 0; ind < stepSize; ind++)
-							_y += (REAL)((*i)[(pos + ind) % m_DataWidth]);
+							_y = max(_y, (REAL)((*i)[(pos + ind) % m_DataWidth]));
+						break;
+
+				//arithmetic mean
+				case 2: for (int ind = 0; ind < stepSize; ind++)
+						_y += (REAL)((*i)[(pos + ind) % m_DataWidth]);
 						_y /= stepSize;
 						break;
 
-				default: _y = 0;
+				default: _y = (REAL)((*i)[pos]);
 			}
 			
 			_y *= scale;
@@ -355,61 +367,60 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		int segmentInd = 0,
 			step,
 			divider;
+
+		//compute y values
+		step = m_SegmentDividers[m_SegmentDividers.size() - 1];
+		divider = m_Segments.size() > 0 ? m_W - m_Segments[m_Segments.size() - 1] : m_W;
+		for (int j = 0; j < m_W; ++j)
+		{
+			calcY(Y, step);
+			(*pointsBuffer)[j] = Y;
+
+			if (segmentInd < m_Segments.size() && j >= divider)
+			{
+				segmentInd++;
+
+				step = m_SegmentDividers[m_SegmentDividers.size() - segmentInd - 1];
+				divider = segmentInd != m_Segments.size() ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
+			}
+
+			pos += step;
+			pos %= m_DataWidth;
+		}
 		
+		//draw y values
+		segmentInd = 0;
+		divider = m_Segments.size() > 0 ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
 		if (!m_GraphStartLeft)
 		{
-			step = m_SegmentDividers[segmentInd];
-			divider = m_Segments.size() > 0 ? m_Segments[segmentInd] : m_W;
-			calcY(oldY, step);
-
-			for (int j = meterRect.X + 1, R = meterRect.X + meterRect.Width; j < R; ++j)
+			for (int j = 1; j < m_W; ++j)
 			{
-				pos += step;
-				pos %= m_DataWidth;
-
-				calcY(Y, step);
-
-				if (segmentInd < m_Segments.size() && j >= meterRect.X + divider)
+				if (segmentInd < m_Segments.size() && j >= divider)
 				{
 					segmentInd++;
 					path.SetMarker();
 					path.StartFigure();
 
-					step = m_SegmentDividers[segmentInd];
-					divider = segmentInd != m_Segments.size() ? m_Segments[segmentInd] : m_W;
+					divider = segmentInd != m_Segments.size() ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
 				}
 
-				path.AddLine((REAL)(j - 1), oldY, (REAL)j, Y);
-
-				oldY = Y;
+				path.AddLine((REAL)(meterRect.X + j - 1), (*pointsBuffer)[j - 1], (REAL)(meterRect.X + j), (*pointsBuffer)[j]);
 			}
 		}
 		else
 		{
-			step = m_SegmentDividers[m_SegmentDividers.size() - segmentInd - 1];
-			divider = m_Segments.size() > 0 ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
-			calcY(oldY, step);
-
-			for (int j = meterRect.X + meterRect.Width, R = meterRect.X + 1; j > R; --j)
+			for (int j = 1; j < m_W; ++j)
 			{
-				pos += step;
-				pos %= m_DataWidth;
-
-				calcY(Y, step);
-
-				if (segmentInd < m_Segments.size() && j - 1 <= meterRect.X + meterRect.Width - divider)
+				if (segmentInd < m_Segments.size() && j >= divider)
 				{
 					segmentInd++;
 					path.SetMarker();
 					path.StartFigure();
 
-					step = m_SegmentDividers[m_SegmentDividers.size() - segmentInd - 1];
 					divider = segmentInd != m_Segments.size() ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
 				}
 
-				path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
-
-				oldY = Y;
+				path.AddLine((REAL)(meterRect.X + meterRect.Width - j), (*pointsBuffer)[j - 1], (REAL)(meterRect.X + meterRect.Width - j - 1), (*pointsBuffer)[j]);
 			}
 		}
 
@@ -426,6 +437,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		}
 
 		++counter;
+		++pointsBuffer;
 	}
 
 	canvas.EndGdiplusContext();

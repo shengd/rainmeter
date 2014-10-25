@@ -35,11 +35,12 @@ private:
 	double m_LineWidth;
 
 	std::vector<std::vector<double>> m_AllValues;		//outer vector is series, inner vector is data points
-	std::vector<std::vector<Gdiplus::REAL>> m_LastPoints;
+	std::vector<Gdiplus::REAL*> m_Points;
 	int m_CurrentPos;
 	int m_DataWidth;
 
 	int m_CurveFitMethod;
+	double m_SmoothAmount;
 
 	bool m_GraphStartLeft;
 };
