@@ -1015,7 +1015,7 @@ ARGB ConfigParser::ReadColor(LPCTSTR section, LPCTSTR key, ARGB defValue)
 	return (m_LastDefaultUsed) ? defValue : ParseColor(result.c_str());
 }
 
-std::vector<Color> ConfigParser::ReadMultipleColors(LPCTSTR section, LPCTSTR key, std::vector<Color> defValue, std::vector<Color>* cont)
+std::vector<Color> ConfigParser::ReadMultipleColors(LPCTSTR section, LPCTSTR key, std::vector<Color> defValue, std::vector<Color> cont)
 {
 	const std::wstring& result = ReadString(section, key, L"");
 
@@ -1295,7 +1295,7 @@ ARGB ConfigParser::ParseColor(LPCTSTR string)
 ** hex-values.
 **
 */
-std::vector<Color> ConfigParser::ParseMultipleColors(LPCTSTR string, std::vector<Color>* cont)
+std::vector<Color> ConfigParser::ParseMultipleColors(LPCTSTR string, std::vector<Color> cont)
 {
 	int R = 255, G = 255, B = 255, A = 255;
 
@@ -1318,12 +1318,12 @@ std::vector<Color> ConfigParser::ParseMultipleColors(LPCTSTR string, std::vector
 			swscanf(token, L"%02x%02x%02x", &R, &G, &B);
 		}
 
-		cont->push_back(Color::MakeARGB(A, R, G, B));
+		cont.push_back(Color::MakeARGB(A, R, G, B));
 
 		token = wcstok(nullptr, L",");
 	}
 
-	return *cont;
+	return cont;
 }
 
 /*

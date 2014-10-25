@@ -130,7 +130,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 			_snwprintf_s(tmpName, _TRUNCATE, L"LineColor%i", i + 1);
 		}
 
-		m_Colors.push_back(parser.ReadMultipleColors(section, tmpName, defColor, &std::vector<Color>()));
+		m_Colors.push_back(parser.ReadMultipleColors(section, tmpName, defColor, std::vector<Color>()));
 
 		if (i == 0)
 		{
