@@ -322,7 +322,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 
 		int pos = m_CurrentPos;
 
-		auto calcY = [&](REAL& _y)
+		auto calcY = [&](REAL& _y, REAL stepSize)
 		{
 			_y = (REAL)((*i)[pos] * scale);
 			_y = min(_y, H);
@@ -330,26 +330,33 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 			_y = meterRect.Y + (H - _y);
 		};
 
-		calcY(oldY);
-
 		// Cache all lines
 		GraphicsPath path;
-		int segmentInd = 0;
+		int segmentInd = 0,
+			step,
+			divider;
 		
 		if (!m_GraphStartLeft)
 		{
+			step = m_SegmentDividers[segmentInd];
+			divider = m_Segments.size() > 0 ? m_Segments[segmentInd] : m_W;
+			calcY(oldY, step);
+
 			for (int j = meterRect.X + 1, R = meterRect.X + meterRect.Width; j < R; ++j)
 			{
-				pos += m_SegmentDividers[m_Segments.size() - segmentInd];
+				pos += step;
 				pos %= m_DataWidth;
 
-				calcY(Y);
+				calcY(Y, step);
 
-				if (segmentInd < m_Segments.size() && j >= meterRect.X + m_Segments[segmentInd])
+				if (segmentInd < m_Segments.size() && j >= meterRect.X + divider)
 				{
 					segmentInd++;
 					path.SetMarker();
 					path.StartFigure();
+
+					step = m_SegmentDividers[segmentInd];
+					divider = segmentInd != m_Segments.size() ? m_Segments[segmentInd] : m_W;
 				}
 
 				path.AddLine((REAL)(j - 1), oldY, (REAL)j, Y);
@@ -359,18 +366,25 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		}
 		else
 		{
+			step = m_SegmentDividers[m_SegmentDividers.size() - segmentInd - 1];
+			divider = m_Segments.size() > 0 ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
+			calcY(oldY, step);
+
 			for (int j = meterRect.X + meterRect.Width, R = meterRect.X + 1; j > R; --j)
 			{
-				pos += m_SegmentDividers[m_Segments.size() - segmentInd];
+				pos += step;
 				pos %= m_DataWidth;
 
-				calcY(Y);
+				calcY(Y, step);
 
-				if (segmentInd < m_Segments.size() && j - 1 <= meterRect.X + meterRect.Width - m_Segments[segmentInd])
+				if (segmentInd < m_Segments.size() && j - 1 <= meterRect.X + meterRect.Width - divider)
 				{
 					segmentInd++;
 					path.SetMarker();
 					path.StartFigure();
+
+					step = m_SegmentDividers[m_SegmentDividers.size() - segmentInd - 1];
+					divider = segmentInd != m_Segments.size() ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
 				}
 
 				path.AddLine((REAL)(j - 1), oldY, (REAL)(j - 2), Y);
