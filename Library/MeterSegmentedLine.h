@@ -38,6 +38,8 @@ private:
 	int m_CurrentPos;
 	int m_DataWidth;
 
+	int m_CurveFitMethod;
+
 	bool m_GraphStartLeft;
 };
 

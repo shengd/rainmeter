@@ -193,6 +193,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	//Read in other options
 	m_Autoscale = parser.ReadBool(section, L"AutoScale", false);
 	m_LineWidth = parser.ReadFloat(section, L"LineWidth", 1.0);
+	m_CurveFitMethod = parser.ReadUInt(section, L"CurveFit", 0);
 
 	//More options
 	const WCHAR* graph = parser.ReadString(section, L"GraphStart", L"RIGHT").c_str();
@@ -322,9 +323,25 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 
 		int pos = m_CurrentPos;
 
-		auto calcY = [&](REAL& _y, REAL stepSize)
+		auto calcY = [&](REAL& _y, REAL stepSize)		//TODO: move this lambda elsewhere
 		{
-			_y = (REAL)((*i)[pos] * scale);
+			_y = 0;
+			switch (m_CurveFitMethod)
+			{
+				//first value
+				case 0:	_y = (REAL)((*i)[pos] * scale);
+						break;
+
+				//arithmetic mean
+				case 1: for (int ind = 0; ind < stepSize; ind++)
+							_y += (REAL)((*i)[(pos + ind) % m_DataWidth] * scale);
+						_y /= stepSize;
+						break;
+
+				default: _y = 0;
+			}
+			
+			
 			_y = min(_y, H);
 			_y = max(_y, 0.0f);
 			_y = meterRect.Y + (H - _y);
