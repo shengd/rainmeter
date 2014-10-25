@@ -340,7 +340,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		{
 			for (int j = meterRect.X + 1, R = meterRect.X + meterRect.Width; j < R; ++j)
 			{
-				++pos;
+				pos += m_SegmentDividers[segmentInd];
 				pos %= meterRect.Width;
 
 				calcY(Y);
@@ -361,7 +361,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		{
 			for (int j = meterRect.X + meterRect.Width, R = meterRect.X + 1; j > R; --j)
 			{
-				++pos;
+				pos += m_SegmentDividers[segmentInd];
 				pos %= meterRect.Width;
 
 				calcY(Y);
