@@ -333,27 +333,27 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 
 		int pos = m_CurrentPos;
 
-		auto calcY = [&](REAL& _y, REAL stepSize)		//TODO: move this lambda elsewhere
+		auto calcY = [&](REAL& _y, REAL stepSize, int currPos)		//TODO: move this lambda elsewhere
 		{
 			_y = 0;
 			switch (m_CurveFitMethod)
 			{
 				//first value
-				case 0:	_y = (REAL)((*i)[pos]);
+				case 0:	_y = (REAL)((*i)[currPos]);
 						break;
 
 				//maximum value
 				case 1: for (int ind = 0; ind < stepSize; ind++)
-							_y = max(_y, (REAL)((*i)[(pos + ind) % m_DataWidth]));
+						_y = max(_y, (REAL)((*i)[(currPos + ind) % m_DataWidth]));
 						break;
 
 				//arithmetic mean
 				case 2: for (int ind = 0; ind < stepSize; ind++)
-						_y += (REAL)((*i)[(pos + ind) % m_DataWidth]);
+						_y += (REAL)((*i)[(currPos + ind) % m_DataWidth]);
 						_y /= stepSize;
 						break;
 
-				default: _y = (REAL)((*i)[pos]);
+				default: _y = (REAL)((*i)[currPos]);
 			}
 			
 			_y *= scale;
@@ -373,7 +373,7 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 		divider = m_Segments.size() > 0 ? m_W - m_Segments[m_Segments.size() - 1] : m_W;
 		for (int j = 0; j < m_W; ++j)
 		{
-			calcY(Y, step);
+			calcY(Y, step, pos - pos % step);
 			(*pointsBuffer)[j] = Y;
 
 			if (segmentInd < m_Segments.size() && j >= divider)
