@@ -38,6 +38,7 @@ private:
 	std::vector<Gdiplus::REAL*> m_Points;
 	int m_CurrentPos;
 	int m_DataWidth;
+	int m_DataWriteOffset;
 
 	int m_CurveFitMethod;
 	double m_SmoothAmount;

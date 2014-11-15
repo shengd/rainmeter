@@ -190,6 +190,8 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 		//calculate data buffer width
 		m_DataWidth += divider * (currMarker - lastMarker);
 		lastMarker = currMarker;
+
+		m_DataWriteOffset = max(m_DataWriteOffset, divider);
 	}
 
 	_snwprintf_s(tmpName, _TRUNCATE, L"SegmentUpdateDivider%i", segmentCount);
@@ -197,6 +199,7 @@ void MeterSegmentedLine::ReadOptions(ConfigParser& parser, const WCHAR* section)
 	m_SegmentDividers.push_back(divider);
 
 	m_DataWidth += divider * (m_W - lastMarker);
+	m_DataWidth += m_DataWriteOffset;
 
 	//Read in other options
 	m_Autoscale = parser.ReadBool(section, L"AutoScale", false);
@@ -247,13 +250,16 @@ bool MeterSegmentedLine::Update()
 		{
 			int allValuesSize = (int)m_AllValues.size();
 			int counter = 0;
+			int currInd = m_CurrentPos - m_DataWriteOffset;
+			if (currInd < 0)
+				currInd += maxSize;
+			int prevInd = currInd - 1;
+			if (prevInd < 0)
+				prevInd += maxSize;
 			for (auto i = m_Measures.cbegin(); counter < allValuesSize && i != m_Measures.cend(); ++i, ++counter)
 			{
-				int prevInd = m_CurrentPos - 1;
-				if (prevInd < 0)
-					prevInd += maxSize;
 				double prevVal = m_AllValues[counter][prevInd];
-				m_AllValues[counter][m_CurrentPos] = (*i)->GetValue() * (1 - m_SmoothAmount) + prevVal * m_SmoothAmount;
+				m_AllValues[counter][currInd] = (*i)->GetValue() * (1 - m_SmoothAmount) + prevVal * m_SmoothAmount;
 			}
 
 			++m_CurrentPos;
@@ -348,12 +354,12 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 
 				//maximum value
 				case 1: for (int ind = 0; ind < stepSize; ind++)
-						_y = max(_y, (REAL)((*i)[(currPos + ind) % m_DataWidth]));
+							_y = max(_y, (REAL)((*i)[(currPos + ind) % m_DataWidth]));
 						break;
 
 				//arithmetic mean
 				case 2: for (int ind = 0; ind < stepSize; ind++)
-						_y += (REAL)((*i)[(currPos + ind) % m_DataWidth]);
+							_y += (REAL)((*i)[(currPos + ind) % m_DataWidth]);
 						_y /= stepSize;
 						break;
 
@@ -420,7 +426,6 @@ bool MeterSegmentedLine::Draw(Gfx::Canvas& canvas)
 					segmentInd++;
 					path.SetMarker();
 					path.StartFigure();
-
 					divider = segmentInd != m_Segments.size() ? m_W - m_Segments[m_Segments.size() - segmentInd - 1] : m_W;
 				}
 
