@@ -249,7 +249,11 @@ bool MeterSegmentedLine::Update()
 			int counter = 0;
 			for (auto i = m_Measures.cbegin(); counter < allValuesSize && i != m_Measures.cend(); ++i, ++counter)
 			{
-				m_AllValues[counter][m_CurrentPos] = (*i)->GetValue();
+				int prevInd = m_CurrentPos - 1;
+				if (prevInd < 0)
+					prevInd += maxSize;
+				double prevVal = m_AllValues[counter][prevInd];
+				m_AllValues[counter][m_CurrentPos] = (*i)->GetValue() * (1 - m_SmoothAmount) + prevVal * m_SmoothAmount;
 			}
 
 			++m_CurrentPos;
